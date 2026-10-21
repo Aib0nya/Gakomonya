@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Романтическая Викторина для Тебя ❤️</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #ffe5ec 0%, #ffc2d1 50%, #ffb3c6 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .font-handwriting {
+            font-family: 'Caveat', cursive;
+        }
+        
+        /* Анимации плавающих сердечек на фоне */
+        .heart-bg {
+            position: fixed;
+            color: rgba(255, 77, 109, 0.25);
+            user-select: none;
+            pointer-events: none;
+            z-index: 0;
+            animation: float 8s infinite linear;
+        }
+        @keyframes float {
+            0% {
+                transform: translateY(105vh) rotate(0deg) scale(0.8);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) rotate(360deg) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        /* Эффект стеклянной карточки (Glassmorphism) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 20px 40px rgba(255, 143, 163, 0.25);
+        }
+
+        /* Плавные переходы страниц */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Стильные анимации для кнопок */
+        .btn-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-hover:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(255, 77, 109, 0.3);
+        }
+        .btn-hover:active {
+            transform: translateY(0) scale(0.98);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 relative min-h-screen">
+
+    <!-- Фонирование плавающими сердечками -->
+    <div id="hearts-container" class="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <!-- Главный контейнер -->
+    <main class="w-full max-w-xl z-10 my-auto">
+        
+        <!-- 1. Главный экран (Приветствие) -->
+        <div id="start-screen" class="glass-card rounded-3xl p-6 md:p-10 text-center fade-in">
+            <div class="inline-block p-4 bg-pink-100 rounded-full mb-4 shadow-inner animate-bounce">
+                <span class="text-5xl">💖</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-pink-600 mb-3 leading-tight">
+                Привет, Моя Зая! ✨
+            </h1>
+            <p class="text-gray-700 text-lg mb-6 leading-relaxed">
+                Я приготовил для тебя особенный романтический тест из 20 вопросов. Отвечай честно (и с улыбкой!), чтобы узнать, насколько идеально мы подходим друг другу! 
+            </p>
+            <div class="p-4 bg-pink-50/80 rounded-2xl mb-8 border border-pink-200">
+                <p class="text-pink-500 font-bold text-sm tracking-wide uppercase">В конце тебя ждёт подарок-сюрприз и наш общий результат! 😉</p>
+            </div>
+            <button onclick="startQuiz()" class="btn-hover w-full py-4 px-8 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-xl rounded-2xl shadow-lg border-b-4 border-rose-600 transition duration-200">
+                Пройти викторину 💕
+            </button>
+        </div>
+
+        <!-- 2. Экран вопросов -->
+        <div id="quiz-screen" class="glass-card rounded-3xl p-6 md:p-8 hidden">
+            <!-- Прогресс-бар -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span id="question-number" class="text-sm font-bold text-pink-600 uppercase tracking-wider">Вопрос 1 из 20</span>
+                    <span id="progress-percent" class="text-sm font-bold text-pink-400">5%</span>
+                </div>
+                <div class="w-full bg-pink-100 h-3 rounded-full overflow-hidden p-0.5 border border-pink-200">
+                    <div id="progress-bar" class="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full transition-all duration-300 w-[5%]"></div>
+                </div>
+            </div>
+
+            <!-- Текст вопроса -->
+            <div class="min-h-[90px] flex items-center justify-center mb-6 text-center">
+                <h2 id="question-text" class="text-xl md:text-2xl font-bold text-gray-800 leading-snug">
+                    Загрузка вопроса...
+                </h2>
+            </div>
+
+            <!-- Варианты ответов -->
+            <div id="answers-container" class="space-y-3.5 mb-2">
+                <!-- Кнопки с ответами будут генерироваться с помощью JS -->
+            </div>
+        </div>
+
+        <!-- 3. Экран результатов -->
+        <div id="result-screen" class="glass-card rounded-3xl p-6 md:p-10 text-center hidden">
+            <div class="text-6xl mb-3 animate-pulse">👑</div>
+            <h2 class="text-2xl font-extrabold text-gray-800 mb-2">Наш Любовный Результат</h2>
+            <p class="text-gray-600 text-sm mb-6">Совместимость нашей пары составляет:</p>
+
+            <!-- Круг с результатом -->
+            <div class="relative w-44 h-44 mx-auto mb-6 flex items-center justify-center bg-gradient-to-tr from-pink-500 to-rose-400 rounded-full shadow-xl border-4 border-white">
+                <div class="text-center text-white">
+                    <span id="score-percentage" class="text-5xl font-extrabold tracking-tight">0%</span>
+                    <span class="block text-xs uppercase font-semibold mt-1 tracking-widest text-pink-100">Любви</span>
+                </div>
+            </div>
+
+            <!-- Заголовок сообщения -->
+            <h3 id="result-title" class="text-2xl font-bold text-pink-600 mb-3 font-handwriting text-3xl">
+                Загрузка...
+            </h3>
+
+            <!-- Текст сообщения -->
+            <p id="result-message" class="text-gray-700 mb-8 text-base leading-relaxed bg-pink-50/80 p-4 rounded-2xl border border-pink-200">
+                Загрузка результатов...
+            </p>
+
+            <!-- Кнопка перезапуска -->
+            <button onclick="restartQuiz()" class="btn-hover w-full py-4 px-8 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-lg rounded-2xl shadow-lg border-b-4 border-rose-600">
+                Пройти ещё раз 🔄
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        /* ==========================================================================
+           МАССИВ ВОПРОСОВ (20 вопросов)
+           Вы можете легко изменять текст вопросов, варианты и баллы (points)!
+           Максимальное число баллов по умолчанию посчитано так, чтобы давать 100%.
+           ========================================================================== */
+        const questions = [
+            {
+                question: "Какое наше идеальное совместное свидание?",
+                answers: [
+                    { text: "Уютный вечер дома с пиццей и фильмом 🍕🎬", points: 5 },
+                    { text: "Романтический ужин при свечах в красивом ресторане 🍷", points: 5 },
+                    { text: "Прогулка под звездами и долгие разговоры обо всём 🌙", points: 5 },
+                    { text: "Спошальное путешествие в новый город ✈️", points: 5 }
+                ]
+            },
+            {
+                question: "Что я больше всего люблю в тебе?",
+                answers: [
+                    { text: "Твою невероятную улыбку и глаза 💖", points: 5 },
+                    { text: "Твою заботу и доброе сердце 🥺", points: 5 },
+                    { text: "Твое чувство юмора и смех 😹", points: 5 },
+                    { text: "Всё вышеперечисленное и даже больше! ✨", points: 5 }
+                ]
+            },
+            {
+                question: "Кто обычно первым обнимает при встрече?",
+                answers: [
+                    { text: "Конечно же я! 🤗", points: 5 },
+                    { text: "Ты всегда бежишь обниматься 🏃‍♀️", points: 5 },
+                    { text: "Мы делаем это одновременно! 💕", points: 5 },
+                    { text: "Кто успеет первым ⚡", points: 5 }
+                ]
+            },
+            {
+                question: "Какой наш главный секрет идеальных отношений?",
+                answers: [
+                    { text: "Умение слушать и понимать друг друга 💬", points: 5 },
+                    { text: "Много обнимашек и поцелуев каждый день 💋", points: 5 },
+                    { text: "Вкусная еда и совместные дурачества 🤪", points: 5 },
+                    { text: "Наша бесконечная любовь! ❤️", points: 5 }
+                ]
+            },
+            {
+                question: "Что мы сделаем, когда встретимся в следующий раз?",
+                answers: [
+                    { text: "Крепко-крепко обнимемся и долго не будем отпускать 🫂", points: 5 },
+                    { text: "Пойдём есть что-нибудь очень вкусное 🍔", points: 5 },
+                    { text: "Забудем обо всём и будем целоваться 💋", points: 5 },
+                    { text: "Все варианты сразу! ✨", points: 5 }
+                ]
+            },
+            {
+                question: "Какой суперспособностью обладает твоя улыбка?",
+                answers: [
+                    { text: "Мгновенно поднимает мне настроение ☀️", points: 5 },
+                    { text: "Заставляет мое сердце биться чаще 💓", points: 5 },
+                    { text: "Растапливает любые проблемы 🫠", points: 5 },
+                    { text: "Пленительно гипнотизирует 🔮", points: 5 }
+                ]
+            },
+            {
+                question: "Если бы мы были героями фильма, какой это был бы жанр?",
+                answers: [
+                    { text: "Самая романтичная комедия 🎬", points: 5 },
+                    { text: "Приключенческий блокбастер 🌍", points: 5 },
+                    { text: "Милая и уютная сказка 🏰", points: 5 },
+                    { text: "История о супергероях любви 🦸‍♂️🦸‍♀️", points: 5 }
+                ]
+            },
+            {
+                question: "Какой подарок от меня для тебя самый ценный?",
+                answers: [
+                    { text: "Мое внимание, время и забота ⏳", points: 5 },
+                    { text: "Милые сюрпризы без повода 🎁", points: 5 },
+                    { text: "Искренние слова любви 💌", points: 5 },
+                    { text: "Просто мое присутствие рядом 💑", points: 5 }
+                ]
+            },
+            {
+                question: "Как мы решаем мелкие разногласия?",
+                answers: [
+                    { text: "Быстро миримся и обнимаемся 🕊️", points: 5 },
+                    { text: "Кормим друг друга вкусняшками 🍫", points: 5 },
+                    { text: "Разговариваем и находим компромисс 🤝", points: 5 },
+                    { text: "Переводим всё в шутку 😸", points: 5 }
+                ]
+            },
+            {
+                question: "Что ты чувствуешь, когда видишь сообщение от меня?",
+                answers: [
+                    { text: "Бабочки в животе начинают летать 🦋", points: 5 },
+                    { text: "Улыбка автоматически появляется на лице 😊", points: 5 },
+                    { text: "Хочу скорее ответить! 📱", points: 5 },
+                    { text: "Тепло в душе и радость ☀️", points: 5 }
+                ]
+            },
+            {
+                question: "Какой наш любимый домашний отдых?",
+                answers: [
+                    { text: "Закутаться в плед и смотреть сериалы 🍿", points: 5 },
+                    { text: "Готовить что-то вместе на кухне 👩‍🍳", points: 5 },
+                    { text: "Просто лежать в обнимку и болтать 🛌", points: 5 },
+                    { text: "Слушать музыку и дурачиться 🎶", points: 5 }
+                ]
+            },
+            {
+                question: "Кто в нашей паре главный «мимими» и сладенький?",
+                answers: [
+                    { text: "Однозначно ты! 🍬", points: 5 },
+                    { text: "Я! (но ты тоже ничего) 🐣", points: 5 },
+                    { text: "Мы оба невероятно милые 🥰", points: 5 },
+                    { text: "Наши чувства друг к другу 💖", points: 5 }
+                ]
+            },
+            {
+                question: "Если бы нужно было описать нашу любовь одним словом, это было бы:",
+                answers: [
+                    { text: "Волшебство ✨", points: 5 },
+                    { text: "Космос 🚀", points: 5 },
+                    { text: "Навсегда ♾️", points: 5 },
+                    { text: "Счастье 🌈", points: 5 }
+                ]
+            },
+            {
+                question: "Насколько сильно я тебя люблю?",
+                answers: [
+                    { text: "До Луны и обратно 🌙", points: 5 },
+                    { text: "Больше, чем все звёзды на небе ✨", points: 5 },
+                    { text: "Сильнее, чем можно описать словами 📈", points: 5 },
+                    { text: "Бесконечно сильно! ❤️", points: 5 }
+                ]
+            },
+            {
+                question: "Что лучше всего согревает в холодный день?",
+                answers: [
+                    { text: "Твои горячие поцелуи и объятия ☕", points: 5 },
+                    { text: "Твои теплые слова в сообщениях 💬", points: 5 },
+                    { text: "Мысли о нашей следующей встрече 💭", points: 5 },
+                    { text: "Всё вместе! 🕯️", points: 5 }
+                ]
+            },
+            {
+                question: "Кто чаще думает друг о друге в течение дня?",
+                answers: [
+                    { text: "Я думаю о тебе каждую минуту 💭", points: 5 },
+                    { text: "Ты постоянно в моих мыслях 24/7 🔄", points: 5 },
+                    { text: "Мы синхронно думаем друг о друге 🧠💓", points: 5 },
+                    { text: "Это непрерывный процесс! ✨", points: 5 }
+                ]
+            },
+            {
+                question: "Какое наше любимое время суток вместе?",
+                answers: [
+                    { text: "Утро, когда можно сладко потянуться 🌅", points: 5 },
+                    { text: "День, полный совместных дел ☀️", points: 5 },
+                    { text: "Уютный романтический вечер 🌇", points: 5 },
+                    { text: "Тихая ночь для сокровенных разговоров 🌌", points: 5 }
+                ]
+            },
+            {
+                question: "Если бы мы отправились на необитаемый остров, что бы мы взяли?",
+                answers: [
+                    { text: "Большой запас вкусняшек 🍫", points: 5 },
+                    { text: "Удобную палатку для обнимашек ⛺", points: 5 },
+                    { text: "Главное, что мы взяли друг друга! 💑", points: 5 },
+                    { text: "Музыку для романтических танцев 🎵", points: 5 }
+                ]
+            },
+            {
+                question: "Что делаешь ты, когда я грущу?",
+                answers: [
+                    { text: "Сразу обнимаешь и целуешь 💋", points: 5 },
+                    { text: "Приносишь вкусную еду и сладости 🍩", points: 5 },
+                    { text: "Говоришь самые теплые слова поддержки 💌", points: 5 },
+                    { text: "Делаешь всё, чтобы я снова улыбнулась! 😊", points: 5 }
+                ]
+            },
+            {
+                question: "Готова ли ты к миллиону поцелуев прямо сейчас?",
+                answers: [
+                    { text: "Да, подставляю щечки и губки! 💋", points: 5 },
+                    { text: "Только если я поцелую в ответ! 😘", points: 5 },
+                    { text: "Миллиона мало, хочу больше! 💖", points: 5 },
+                    { text: "Готова всегда и везде! 🥰", points: 5 }
+                ]
+            }
+        ];
+
+        /* Состояние викторины */
+        let currentQuestionIndex = 0;
+        let totalScore = 0;
+        const maxPossibleScore = questions.reduce((acc, q) => acc + Math.max(...q.answers.map(a => a.points)), 0);
+
+        // Инициализация фона с фоновыми сердечками
+        function createBackgroundHearts() {
+            const container = document.getElementById('hearts-container');
+            const heartSymbols = ['❤️', '💖', '💕', '💗', '🌸', '✨'];
+            for (let i = 0; i < 20; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-bg';
+                heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+                heart.style.left = `${Math.random() * 100}%`;
+                heart.style.animationDuration = `${6 + Math.random() * 6}s`;
+                heart.style.animationDelay = `${Math.random() * 5}s`;
+                heart.style.fontSize = `${16 + Math.random() * 24}px`;
+                container.appendChild(heart);
+            }
+        }
+
+        // Старт викторины
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('quiz-screen').classList.add('fade-in');
+            currentQuestionIndex = 0;
+            totalScore = 0;
+            showQuestion();
+        }
+
+        // Отображение текущего вопроса
+        function showQuestion() {
+            const q = questions[currentQuestionIndex];
+            
+            // Обновляем прогресс
+            const progress = Math.round(((currentQuestionIndex + 1) / questions.length) * 100);
+            document.getElementById('question-number').innerText = `Вопрос ${currentQuestionIndex + 1} из ${questions.length}`;
+            document.getElementById('progress-percent').innerText = `${progress}%`;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            // Текст вопроса
+            document.getElementById('question-text').innerText = q.question;
+
+            // Варианты ответов
+            const answersContainer = document.getElementById('answers-container');
+            answersContainer.innerHTML = '';
+
+            q.answers.forEach((ans) => {
+                const button = document.createElement('button');
+                button.className = 'btn-hover w-full text-left p-4 bg-white/90 hover:bg-pink-50 border-2 border-pink-100 hover:border-pink-300 rounded-2xl text-gray-800 font-semibold transition duration-150 flex items-center justify-between group shadow-sm';
+                button.innerHTML = `
+                    <span class="text-base md:text-lg group-hover:text-pink-600 transition-colors">${ans.text}</span>
+                    <span class="text-pink-400 opacity-0 group-hover:opacity-100 transition-opacity text-xl">💖</span>
+                `;
+                button.onclick = () => selectAnswer(ans.points);
+                answersContainer.appendChild(button);
+            });
+        }
+
+        // Выбор ответа
+        function selectAnswer(points) {
+            totalScore += points;
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {
+                // Небольшая плавная анимация переключения
+                const quizScreen = document.getElementById('quiz-screen');
+                quizScreen.classList.remove('fade-in');
+                void quizScreen.offsetWidth; // Триггер reflow
+                quizScreen.classList.add('fade-in');
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        // Показ результатов
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            const resultScreen = document.getElementById('result-screen');
+            resultScreen.classList.remove('hidden');
+            resultScreen.classList.add('fade-in');
+
+            // Подсчет процента (от 1 до 100)
+            let percentage = Math.round((totalScore / maxPossibleScore) * 100);
+            if (isNaN(percentage) || percentage < 1) percentage = 100; // Резервный расчет
+
+            // Анимация числа процентов
+            animateValue('score-percentage', 0, percentage, 1500);
+
+            // Настройка текста результата
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+
+            if (percentage >= 90) {
+                resultTitle.innerText = "100% — Мы идеальная пара! 💞";
+                resultMessage.innerText = "Наша любовь — это что-то неземное! Ты мой самый любимый человек во всей Вселенной. Я безумно счастлив, что ты есть в моей жизни! 🌹✨";
+            } else if (percentage >= 70) {
+                resultTitle.innerText = "90%+ — Прекрасный результат! 🥰";
+                resultMessage.innerText = "Мы подходим друг другу просто идеально! Ты делаешь каждый мой день ярче и теплее. Люблю тебя безумно! ❤️";
+            } else {
+                resultTitle.innerText = "Ты мое самое большое счастье! 💖";
+                resultMessage.innerText = "Тесты — это просто цифры, а моя любовь к тебе — бесконечна! Спасибо тебе за каждую улыбку и момент вместе! 💌";
+            }
+
+            // Запуск эффекта конфетти из сердечек
+            launchHeartConfetti();
+        }
+
+        // Анимация быстрого роста цифр от 0 до N
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start) + "%";
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Салют из конфетти (сердечки)
+        function launchHeartConfetti() {
+            if (typeof confetti === 'function') {
+                const duration = 3 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+                function randomInRange(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+
+                const interval = setInterval(function() {
+                    const timeLeft = animationEnd - Date.now();
+
+                    if (timeLeft <= 0) {
+                        return clearInterval(interval);
+                    }
+
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: ['#ff4d6d', '#ff758f', '#ffb3c6'] });
+                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: ['#ff4d6d', '#ff758f', '#ffb3c6'] });
+                }, 250);
+            }
+        }
+
+        // Начать сначала
+        function restartQuiz() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('start-screen').classList.add('fade-in');
+        }
+
+        // Запуск генерации сердечек при загрузке страницы
+        window.onload = function() {
+            createBackgroundHearts();
+        };
+    </script>
+</body>
+</html>
